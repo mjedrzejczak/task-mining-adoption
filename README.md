@@ -5,14 +5,14 @@ drill-down to the complete customer (team) list.
 
 - **Stack:** React 19 · Next.js 16 (App Router) · Tailwind CSS v4 · TypeScript
 - **Data:** static snapshot baked in from Datadog (`celonis.datadoghq.com`),
-  period **May 2026**. No backend required.
+  period **May–Jun 2026** (`2026-05-01 → 2026-06-23`). No backend required.
 
 ## What it shows
 
 - KPI strip: active clients, active teams, project creations + failure rate,
   capture sessions, uploads, SQL jobs, uploader successes.
 - Charts: daily project-creation trend, recorder-version adoption.
-- **Customer drill-down table** (all 75 active teams):
+- **Customer drill-down table** (all 91 active teams):
   - search by name, filter by segment (Customer / Sandbox-POV / Internal),
   - sort by clients, versions, uploads, errors,
   - click any row to expand full per-team detail (domain, share of clients,

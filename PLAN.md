@@ -7,7 +7,7 @@ complete customer (team) list.
 ## Decisions (confirmed with user)
 - Stack: React 19 + Next.js (App Router) + Tailwind CSS, shadcn-style components.
 - Data: **snapshot** baked in (no backend). Source = Datadog (celonis.datadoghq.com),
-  period May 2026 (2026-05-01 → 2026-06-01).
+  period May–Jun 2026 (2026-05-01 → 2026-06-23).
 - Drill-down: complete list of all teams/customers with client counts, versions,
   and activity — sortable + searchable table.
 
