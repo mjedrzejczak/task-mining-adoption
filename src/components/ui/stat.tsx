@@ -9,19 +9,32 @@ const valueTone: Record<Tone, string> = {
   success: "text-[var(--success)]",
 };
 
+interface StatProps {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: Tone;
+  // When provided, the card becomes a toggle button that drives the table
+  // filter. `active` reflects the pressed state for styling + a11y.
+  onClick?: () => void;
+  active?: boolean;
+}
+
 export function Stat({
   label,
   value,
   hint,
   tone = "default",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: Tone;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4 shadow-sm">
+  onClick,
+  active = false,
+}: StatProps) {
+  const base = "rounded-xl border bg-[var(--surface)] px-5 py-4 text-left shadow-sm";
+  const borderCls = active
+    ? "border-[var(--accent)] ring-1 ring-[var(--accent)]"
+    : "border-[var(--border)]";
+
+  const body = (
+    <>
       <p className="text-xs font-medium tracking-wide text-[var(--muted)] uppercase">
         {label}
       </p>
@@ -29,6 +42,25 @@ export function Stat({
         {value}
       </p>
       {hint ? <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p> : null}
-    </div>
+    </>
+  );
+
+  if (!onClick) {
+    return <div className={cn(base, borderCls)}>{body}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        base,
+        borderCls,
+        "block w-full cursor-pointer transition-colors hover:border-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+      )}
+    >
+      {body}
+    </button>
   );
 }
