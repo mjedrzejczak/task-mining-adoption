@@ -39,10 +39,6 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          # Enable Pages from inside the runner (which can reach api.github.com),
-          # so no manual toggle / local API call is needed.
-          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
