@@ -1,7 +1,12 @@
 import type { CustomerRecord } from "@/data/customers";
 
 export type CustomerFilter = "All" | "Active" | "Adopting" | "No usage" | "Expired";
-export type CustomerSortKey = "customer" | "contractValue" | "activeClients" | "endDate";
+export type CustomerSortKey =
+  | "customer"
+  | "contractValue"
+  | "activeClients"
+  | "teams"
+  | "endDate";
 export type SortDir = "asc" | "desc";
 
 export const CUSTOMER_FILTERS: CustomerFilter[] = [
@@ -49,6 +54,9 @@ export function filterSortCustomers(
     if (opts.sortKey === "customer") return a.customer.localeCompare(b.customer) * dir;
     if (opts.sortKey === "endDate") {
       return (a.endDate ?? "").localeCompare(b.endDate ?? "") * dir;
+    }
+    if (opts.sortKey === "teams") {
+      return (a.matchedTeams.length - b.matchedTeams.length) * dir;
     }
     return (a[opts.sortKey] - b[opts.sortKey]) * dir;
   });

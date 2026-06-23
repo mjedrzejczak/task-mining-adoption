@@ -1,12 +1,13 @@
+"use client";
+
+import { Fragment, useState } from "react";
 import type { CustomerRecord } from "@/data/customers";
 import type {
   CustomerFilter,
-  CustomerKpis,
   CustomerSortKey,
   SortDir,
 } from "@/lib/customers";
 import { CUSTOMER_FILTERS } from "@/lib/customers";
-import { Stat } from "@/components/ui/stat";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 
@@ -40,8 +41,8 @@ function daysUntil(iso: string | null): number | null {
 export function CustomerOverview({
   rows,
   totalCustomers,
-  kpis,
   counts,
+  teamClients,
   query,
   onQuery,
   filter,
@@ -52,8 +53,8 @@ export function CustomerOverview({
 }: {
   rows: CustomerRecord[];
   totalCustomers: number;
-  kpis: CustomerKpis;
   counts: Record<CustomerFilter, number>;
+  teamClients: Record<string, number>;
   query: string;
   onQuery: (s: string) => void;
   filter: CustomerFilter;
@@ -62,133 +63,101 @@ export function CustomerOverview({
   sortDir: SortDir;
   onSort: (k: CustomerSortKey) => void;
 }) {
-  // A KPI card toggles its matching filter; clicking the active one clears it.
-  const toggle = (f: CustomerFilter) => onFilter(filter === f ? "All" : f);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const totalAcv = rows.reduce((s, c) => s + c.contractValue, 0);
+  const totalClients = rows.reduce((s, c) => s + c.activeClients, 0);
 
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-base font-semibold tracking-tight">
-          Customers — contract value &amp; adoption
-        </h2>
-        <Badge tone="neutral">contract book</Badge>
-        <span className="text-xs text-[var(--muted)]">
-          KPIs reflect the {kpis.customersInView} customers in view — click a card
-          or filter below
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <Stat
-          label="Active contracts"
-          value={kpis.activeContracts.toLocaleString("en-US")}
-          onClick={() => toggle("Active")}
-          active={filter === "Active"}
-          hint="customers with a live Task Mining contract"
-        />
-        <Stat
-          label="Active, no clients"
-          value={kpis.noUsage.toLocaleString("en-US")}
-          tone="warning"
-          onClick={() => toggle("No usage")}
-          active={filter === "No usage"}
-          hint="active contract · 0 active clients"
-        />
-        <Stat
-          label="Active + adopting"
-          value={kpis.adopting.toLocaleString("en-US")}
-          tone="success"
-          onClick={() => toggle("Adopting")}
-          active={filter === "Adopting"}
-          hint="active contract with ≥1 client"
-        />
-        <Stat
-          label="Contract value (ACV)"
-          value={currency.format(kpis.totalAcv)}
-          hint={`${kpis.activeContracts} active contracts in view`}
-        />
-        <Stat
-          label="ACV at risk"
-          value={currency.format(kpis.noUsageAcv)}
-          tone="warning"
-          hint="live contracts with no usage"
-        />
-        <Stat
-          label="Customers in view"
-          value={kpis.customersInView.toLocaleString("en-US")}
-          hint={`${kpis.activeContracts} active · ${kpis.expired} expired`}
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-[var(--border)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Customers — contracts &amp; adoption</h3>
+          <p className="mt-0.5 text-xs text-[var(--muted)]">
+            All {totalCustomers} customers · contract value joined with active Task Mining
+            clients (Datadog, May 2026) · click a row for the team breakdown
+          </p>
+        </div>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder="Search customer…"
+          aria-label="Search customers"
+          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm outline-none focus:border-[var(--accent)] sm:w-64"
         />
       </div>
 
-      <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[var(--border)] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-sm font-semibold">
-              Customers — contract value vs. adoption
-            </h3>
-            <p className="mt-0.5 text-xs text-[var(--muted)]">
-              All {totalCustomers} customers from the contract book · ACV joined with
-              active clients (Datadog, May 2026)
-            </p>
-          </div>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search customer…"
-            aria-label="Search customers"
-            className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm outline-none focus:border-[var(--accent)] sm:w-64"
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-1.5 px-4 py-3">
+        {CUSTOMER_FILTERS.map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => onFilter(f)}
+            aria-pressed={filter === f}
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              filter === f
+                ? "bg-[var(--accent)] text-white"
+                : "bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--foreground)]",
+            )}
+          >
+            {f} <span className="opacity-70">{counts[f]}</span>
+          </button>
+        ))}
+      </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 px-4 py-3">
-          {CUSTOMER_FILTERS.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => onFilter(f)}
-              aria-pressed={filter === f}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                filter === f
-                  ? "bg-[var(--accent)] text-white"
-                  : "bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--foreground)]",
-              )}
-            >
-              {f} <span className="opacity-70">{counts[f]}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-y border-[var(--border)] text-xs text-[var(--muted)]">
-                <Th onClick={() => onSort("customer")} active={sortKey === "customer"} dir={sortDir} align="left">
-                  Customer
-                </Th>
-                <Th onClick={() => onSort("contractValue")} active={sortKey === "contractValue"} dir={sortDir}>
-                  Contract value
-                </Th>
-                <Th onClick={() => onSort("activeClients")} active={sortKey === "activeClients"} dir={sortDir}>
-                  Active clients
-                </Th>
-                <Th onClick={() => onSort("endDate")} active={sortKey === "endDate"} dir={sortDir}>
-                  Contract ends
-                </Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c) => {
-                const d = daysUntil(c.endDate);
-                const expiringSoon = c.active && d !== null && d <= 90;
-                return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-y border-[var(--border)] text-xs text-[var(--muted)]">
+              <Th onClick={() => onSort("customer")} active={sortKey === "customer"} dir={sortDir} align="left">
+                Customer
+              </Th>
+              <Th onClick={() => onSort("activeClients")} active={sortKey === "activeClients"} dir={sortDir}>
+                Active clients
+              </Th>
+              <Th onClick={() => onSort("teams")} active={sortKey === "teams"} dir={sortDir}>
+                Teams
+              </Th>
+              <Th onClick={() => onSort("contractValue")} active={sortKey === "contractValue"} dir={sortDir}>
+                Contract value
+              </Th>
+              <Th onClick={() => onSort("endDate")} active={sortKey === "endDate"} dir={sortDir}>
+                Contract ends
+              </Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c) => {
+              const d = daysUntil(c.endDate);
+              const expiringSoon = c.active && d !== null && d <= 90;
+              const teamCount = c.matchedTeams.length;
+              const isOpen = expanded === c.customer;
+              return (
+                <Fragment key={c.customer}>
                   <tr
-                    key={c.customer}
-                    className="border-b border-[var(--border)] transition-colors hover:bg-[var(--surface-2)]"
+                    onClick={() => teamCount > 0 && setExpanded(isOpen ? null : c.customer)}
+                    className={cn(
+                      "border-b border-[var(--border)] transition-colors hover:bg-[var(--surface-2)]",
+                      teamCount > 0 && "cursor-pointer",
+                      isOpen && "bg-[var(--surface-2)]",
+                    )}
                   >
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
+                        {teamCount > 0 ? (
+                          <span
+                            className={cn(
+                              "inline-block text-[var(--muted)] transition-transform",
+                              isOpen && "rotate-90",
+                            )}
+                            aria-hidden
+                          >
+                            ›
+                          </span>
+                        ) : (
+                          <span className="inline-block w-[1ch]" aria-hidden />
+                        )}
                         <span className="truncate font-medium">{c.customer}</span>
                         {!c.active ? (
                           <Badge tone="neutral">Expired</Badge>
@@ -197,9 +166,6 @@ export function CustomerOverview({
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">
-                      {fmtMoney(c.contractValue)}
-                    </td>
                     <td
                       className={cn(
                         "px-4 py-2.5 text-right tabular-nums",
@@ -207,6 +173,12 @@ export function CustomerOverview({
                       )}
                     >
                       {c.activeClients > 0 ? c.activeClients.toLocaleString("en-US") : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-[var(--muted)]">
+                      {teamCount > 0 ? teamCount : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">
+                      {fmtMoney(c.contractValue)}
                     </td>
                     <td
                       className={cn(
@@ -217,28 +189,66 @@ export function CustomerOverview({
                       {fmtDate(c.endDate)}
                     </td>
                   </tr>
-                );
-              })}
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
-                    No customers match your filters.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+                  {isOpen && teamCount > 0 ? (
+                    <tr className="border-b border-[var(--border)] bg-[var(--surface-2)]">
+                      <td colSpan={5} className="px-4 py-3">
+                        <TeamBreakdown teams={c.matchedTeams} teamClients={teamClients} />
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              );
+            })}
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
+                  No customers match your filters.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
 
-        <div className="flex flex-col gap-1 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Showing {rows.length} of {totalCustomers} customers
-          </span>
-          <span>
-            {currency.format(kpis.totalAcv)} ACV ·{" "}
-            {kpis.totalActiveClients.toLocaleString("en-US")} active clients in view
-          </span>
-        </div>
+      <div className="flex flex-col gap-1 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          Showing {rows.length} of {totalCustomers} customers
+        </span>
+        <span>
+          {currency.format(totalAcv)} ACV · {totalClients.toLocaleString("en-US")} active clients
+          in view
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Per-customer Datadog team breakdown — shown when a customer maps to one or
+// more @teamDomain values (e.g. Deutsche Bank → dbank + dbank-psb).
+function TeamBreakdown({
+  teams,
+  teamClients,
+}: {
+  teams: string[];
+  teamClients: Record<string, number>;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-medium text-[var(--muted)]">
+        {teams.length} Datadog {teams.length === 1 ? "team" : "teams"} mapped to this customer
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {teams.map((t) => (
+          <div
+            key={t}
+            className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
+          >
+            <span className="truncate font-mono text-xs">{t}</span>
+            <span className="shrink-0 text-xs tabular-nums text-[var(--muted)]">
+              {(teamClients[t] ?? 0).toLocaleString("en-US")} clients
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -2,10 +2,9 @@ import {
   PERIOD,
   PERIOD_RANGE,
   SOURCE,
-  creationTrend,
   summary,
   teams,
-  versionMix,
+  weeklyActiveClients,
 } from "@/data/adoption";
 import { enrich } from "@/lib/adoption";
 import { Badge } from "@/components/ui/badge";
@@ -38,18 +37,16 @@ export default function Home() {
       <AdoptionDashboard
         customers={customers}
         teams={enriched}
-        summary={summary}
-        creationTrend={creationTrend}
-        versionMix={versionMix}
+        weeklyActiveClients={weeklyActiveClients}
       />
 
       <footer className="mt-8 text-xs text-[var(--muted)]">
-        Snapshot generated from Datadog. Segmentation of team domains is
-        best-effort. Weekly trends are partial due to ~30-day log retention.
-        Contract values are from “Customers Task mining.xlsx” (latest populated
-        month, Mar 2026); active clients are name-matched to Datadog team
-        domains, so unmatched customers may show 0. The top “Active clients /
-        teams” KPIs reflect the customers currently in view.
+        Snapshot generated from Datadog. Contract values are from “Customers Task
+        mining.xlsx” (latest populated month, Mar 2026); active clients are
+        name-matched to Datadog team domains, so unmatched customers may show 0
+        and a customer can map to multiple teams. KPIs and the “Top active
+        customers” chart reflect the customers currently in view; the weekly
+        clients series is platform-wide and partial due to ~30-day log retention.
       </footer>
     </main>
   );

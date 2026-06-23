@@ -1,39 +1,36 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type {
-  SummaryMetrics,
-  TrendPoint,
-  VersionPoint,
-} from "@/data/adoption";
+import type { WeekPoint } from "@/data/adoption";
 import type { CustomerRecord } from "@/data/customers";
 import type { EnrichedTeam } from "@/lib/adoption";
 import type { CustomerFilter, CustomerSortKey, SortDir } from "@/lib/customers";
 import { customerKpis, filterCounts, filterSortCustomers } from "@/lib/customers";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { CreationTrend } from "@/components/creation-trend";
-import { VersionChart } from "@/components/version-chart";
-import { CustomerTable } from "@/components/customer-table";
+import { CustomerKpis } from "@/components/customer-kpis";
 import { CustomerOverview } from "@/components/customer-overview";
-import { TopKpis } from "@/components/top-kpis";
+import { TopCustomersChart } from "@/components/top-customers-chart";
+import { WeeklyClientsChart } from "@/components/weekly-clients-chart";
 
 export function AdoptionDashboard({
   customers,
   teams,
-  summary,
-  creationTrend,
-  versionMix,
+  weeklyActiveClients,
 }: {
   customers: CustomerRecord[];
   teams: EnrichedTeam[];
-  summary: SummaryMetrics;
-  creationTrend: TrendPoint[];
-  versionMix: VersionPoint[];
+  weeklyActiveClients: WeekPoint[];
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<CustomerFilter>("All");
-  const [sortKey, setSortKey] = useState<CustomerSortKey>("contractValue");
+  const [sortKey, setSortKey] = useState<CustomerSortKey>("activeClients");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const teamClients = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const t of teams) map[t.team] = t.clients;
+    return map;
+  }, [teams]);
 
   const rows = useMemo(
     () => filterSortCustomers(customers, { query, filter, sortKey, sortDir }),
@@ -41,7 +38,9 @@ export function AdoptionDashboard({
   );
   const kpis = useMemo(() => customerKpis(rows), [rows]);
   const counts = useMemo(() => filterCounts(customers), [customers]);
-  const filtered = query.trim() !== "" || filter !== "All";
+
+  // KPI cards double as filter toggles; clicking the active one clears it.
+  const toggle = (f: CustomerFilter) => setFilter((cur) => (cur === f ? "All" : f));
 
   function toggleSort(key: CustomerSortKey) {
     if (key === sortKey) {
@@ -54,44 +53,14 @@ export function AdoptionDashboard({
 
   return (
     <>
-      <TopKpis
-        summary={summary}
-        inViewClients={kpis.totalActiveClients}
-        inViewTeams={kpis.activeTeams}
-        filtered={filtered}
-      />
-
-      <section className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Card>
-          <CardHeader
-            title="Project creations per day"
-            subtitle="taskmining.project.creations · daily"
-          />
-          <CardContent>
-            <CreationTrend data={creationTrend} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader
-            title="Recorder version adoption"
-            subtitle="distinct clients per version"
-          />
-          <CardContent>
-            <VersionChart data={versionMix} />
-          </CardContent>
-        </Card>
-      </section>
+      <CustomerKpis kpis={kpis} filter={filter} onToggle={toggle} />
 
       <section className="mt-6">
-        <CustomerTable teams={teams} totalClients={summary.activeClients} />
-      </section>
-
-      <section className="mt-10">
         <CustomerOverview
           rows={rows}
           totalCustomers={customers.length}
-          kpis={kpis}
           counts={counts}
+          teamClients={teamClients}
           query={query}
           onQuery={setQuery}
           filter={filter}
@@ -100,6 +69,27 @@ export function AdoptionDashboard({
           sortDir={sortDir}
           onSort={toggleSort}
         />
+      </section>
+
+      <section className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Top active customers"
+            subtitle="active Task Mining clients · current view"
+          />
+          <CardContent>
+            <TopCustomersChart customers={rows} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader
+            title="Task Mining clients"
+            subtitle="distinct active clients per week"
+          />
+          <CardContent>
+            <WeeklyClientsChart data={weeklyActiveClients} />
+          </CardContent>
+        </Card>
       </section>
     </>
   );
