@@ -35,9 +35,24 @@ export function Stat({
 
   const body = (
     <>
-      <p className="text-xs font-medium tracking-wide text-[var(--muted)] uppercase">
-        {label}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium tracking-wide text-[var(--muted)] uppercase">
+          {label}
+        </p>
+        {onClick ? (
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase transition-colors",
+              active
+                ? "bg-[var(--accent)] text-white"
+                : "bg-[var(--surface-2)] text-[var(--muted)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+            )}
+          >
+            {active ? "Showing" : "View"}
+            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          </span>
+        ) : null}
+      </div>
       <p className={cn("mt-2 text-2xl font-semibold tabular-nums", valueTone[tone])}>
         {value}
       </p>
@@ -57,7 +72,7 @@ export function Stat({
       className={cn(
         base,
         borderCls,
-        "block w-full cursor-pointer transition-colors hover:border-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+        "group block w-full cursor-pointer transition-colors hover:border-[var(--accent)] hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
       )}
     >
       {body}
