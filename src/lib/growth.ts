@@ -1,6 +1,9 @@
 import type { CustomerRecord } from "@/data/customers";
-import type { PovStatus } from "@/data/growth";
-import { LIGHTHOUSE, POV, POV_WON, CCM_TARGETS } from "@/data/growth";
+import type { PovHealth, PovStage } from "@/data/growth";
+import { LIGHTHOUSE, PIPELINE, PIPELINE_STAGES, CCM_TARGETS } from "@/data/growth";
+
+// The implementation stage is the "PoV cohort" that tags contracts/prospects.
+const IMPLEMENTATION = PIPELINE.filter((p) => p.stage === "Implementation");
 
 // "Today" for renewal math — aligned to the latest Datadog snapshot window.
 const TODAY = new Date("2026-06-24T00:00:00");
@@ -52,7 +55,7 @@ export function buildGrowthCustomers(
     LIGHTHOUSE.filter((l) => l.customer).map((l) => [l.customer as string, l]),
   );
   const povByName = new Map(
-    POV.filter((p) => p.customer).map((p) => [p.customer as string, p]),
+    IMPLEMENTATION.filter((p) => p.customer).map((p) => [p.customer as string, p]),
   );
   const ccmSet = new Set(CCM_TARGETS);
 
@@ -86,11 +89,11 @@ export function buildGrowthCustomers(
     e.ccm = e.ccm || l.ccm;
     prospects.set(l.label, e);
   }
-  for (const p of POV) {
+  for (const p of IMPLEMENTATION) {
     if (p.customer || contracted.has(p.name)) continue;
     const e = prospects.get(p.name) ?? { label: p.name, lighthouse: false, pov: false, ccm: false };
     e.pov = true;
-    e.ccm = e.ccm || p.ccm;
+    e.ccm = e.ccm || (p.ccm ?? false);
     if (p.team) e.team = p.team;
     prospects.set(p.name, e);
   }
@@ -169,40 +172,43 @@ export function buildLighthouseList(rows: GrowthCustomer[]): LighthouseRow[] {
   }).sort((a, b) => b.clients - a.clients);
 }
 
-export interface PovRow {
+export interface PipelineCard {
   name: string;
-  status: PovStatus;
+  health: PovHealth;
   strategic: boolean;
   ccm: boolean;
   trialClients: number | null;
   note?: string;
 }
 
-export function buildPovList(rows: GrowthCustomer[]): PovRow[] {
-  const byName = rowIndex(rows);
-  const order: Record<PovStatus, number> = { "at-risk": 0, "on-track": 1, won: 2 };
-  return POV.map((seed) => {
-    const r = byName.get(seed.customer ?? seed.name);
-    const trialClients = seed.team || r ? r?.activeClients ?? 0 : null;
-    return {
-      name: seed.name,
-      status: seed.status,
-      strategic: seed.strategic,
-      ccm: r?.ccm ?? seed.ccm,
-      trialClients,
-      note: seed.note,
-    };
-  }).sort((a, b) => order[a.status] - order[b.status]);
+export interface PipelineColumn {
+  stage: PovStage;
+  label: string;
+  cards: PipelineCard[];
 }
 
-export const POV_WON_LIST: PovRow[] = POV_WON.map((s) => ({
-  name: s.name,
-  status: s.status,
-  strategic: s.strategic,
-  ccm: s.ccm,
-  trialClients: null,
-  note: s.note,
-}));
+// The full board, grouped by stage. Implementation cards are enriched with live
+// trial-client counts where we have a Datadog team / matching contract.
+export function buildPipeline(rows: GrowthCustomer[]): PipelineColumn[] {
+  const byName = rowIndex(rows);
+  return PIPELINE_STAGES.map((st) => ({
+    stage: st.id,
+    label: st.label,
+    cards: PIPELINE.filter((p) => p.stage === st.id).map((p) => {
+      const r = byName.get(p.customer ?? p.name);
+      const trialClients =
+        p.stage === "Implementation" && (p.team || r) ? r?.activeClients ?? 0 : null;
+      return {
+        name: p.name,
+        health: p.health,
+        strategic: !!p.strategic,
+        ccm: p.ccm ?? r?.ccm ?? false,
+        trialClients,
+        note: p.note,
+      };
+    }),
+  }));
+}
 
 export interface CcmRow {
   customer: string;

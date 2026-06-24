@@ -5,18 +5,17 @@ import type { GrowthCustomer } from "@/lib/growth";
 import {
   buildCcmList,
   buildLighthouseList,
-  buildPovList,
+  buildPipeline,
   buildReviewGroups,
   buildUnderutilizedList,
   growthCounts,
-  POV_WON_LIST,
   type LighthouseStatus,
-  type PovRow,
 } from "@/lib/growth";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CcmBadge } from "@/components/ui/ccm-badge";
 import { Stat } from "@/components/ui/stat";
+import { PovPipeline } from "@/components/pov-pipeline";
 import { cn } from "@/lib/cn";
 
 const acvFmt = new Intl.NumberFormat("en-US", {
@@ -71,12 +70,6 @@ const lhTone: Record<LighthouseStatus, "success" | "warning" | "danger" | "neutr
   Prospect: "neutral",
 };
 
-const povStatusBadge: Record<PovRow["status"], { tone: "success" | "warning" | "accent"; label: string }> = {
-  "on-track": { tone: "success", label: "On track" },
-  "at-risk": { tone: "warning", label: "At risk" },
-  won: { tone: "accent", label: "Won" },
-};
-
 type Focus = "lighthouse" | "pov" | "attention";
 
 export function CustomerGrowth({ customers }: { customers: GrowthCustomer[] }) {
@@ -85,7 +78,7 @@ export function CustomerGrowth({ customers }: { customers: GrowthCustomer[] }) {
 
   const counts = growthCounts(customers);
   const lighthouse = buildLighthouseList(customers);
-  const pov = buildPovList(customers);
+  const pipeline = buildPipeline(customers);
   const underutilized = buildUnderutilizedList(customers);
   const ccm = buildCcmList(customers);
   const reviewGroups = buildReviewGroups(customers);
@@ -258,7 +251,8 @@ export function CustomerGrowth({ customers }: { customers: GrowthCustomer[] }) {
       </Card>
       ) : null}
 
-      <section className={cn("grid grid-cols-1 gap-3", focus === null && "lg:grid-cols-3")}>
+      {showUnder || showLighthouse ? (
+      <section className={cn("grid grid-cols-1 gap-3", showUnder && showLighthouse && "lg:grid-cols-2")}>
         {showUnder ? (
         <Card>
           <CardHeader
@@ -317,55 +311,20 @@ export function CustomerGrowth({ customers }: { customers: GrowthCustomer[] }) {
           </CardContent>
         </Card>
         ) : null}
+      </section>
+      ) : null}
 
-        {showPov ? (
+      {showPov ? (
         <Card>
           <CardHeader
             title="PoV pipeline"
-            subtitle="Active proofs-of-value to convert"
+            subtitle="Full sales pipeline by stage · Demo → Decision"
           />
           <CardContent>
-            <ul>
-              {pov.map((p) => {
-                const s = povStatusBadge[p.status];
-                return (
-                  <Row
-                    key={p.name}
-                    name={
-                      <>
-                        {p.strategic ? <span className="text-[var(--accent)]">★ </span> : null}
-                        {p.name}
-                      </>
-                    }
-                    badges={
-                      <>
-                        {p.ccm ? <CcmTag /> : null}
-                        <Badge tone={s.tone}>{s.label}</Badge>
-                      </>
-                    }
-                    metric={p.trialClients && p.trialClients > 0 ? num(p.trialClients) : "—"}
-                    metricLabel="trial clients"
-                  />
-                );
-              })}
-            </ul>
-            <div className="mt-3 border-t border-[var(--border)] pt-3">
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
-                Recently won
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {POV_WON_LIST.map((w) => (
-                  <Badge key={w.name} tone="success">
-                    {w.name}
-                    {w.note ? ` · ${w.note}` : ""}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+            <PovPipeline columns={pipeline} />
           </CardContent>
         </Card>
-        ) : null}
-      </section>
+      ) : null}
     </div>
   );
 }

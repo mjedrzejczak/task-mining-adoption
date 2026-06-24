@@ -34,37 +34,66 @@ export const LIGHTHOUSE_WATCH: LighthouseSeed[] = [
   { label: "Barclays", customer: null, ccm: false, note: "RFP / evaluation — lighthouse if it converts" },
 ];
 
-export type PovStatus = "on-track" | "at-risk" | "won";
+// Full sales pipeline (June board). Stages map to the board columns; health
+// maps to the card colour (blue = on-track, yellow = at-risk, green = won).
+export type PovStage = "Demo" | "RFP" | "Discovery" | "Implementation" | "Decision";
+export type PovHealth = "on-track" | "at-risk" | "won" | "neutral";
 
-export interface PovSeed {
+export interface PipelineSeed {
   name: string;
-  status: PovStatus;
-  strategic: boolean; // starred on the board
-  ccm: boolean; // also a CCM target
-  customer?: string | null; // matched customers.ts name (null = prospect, no contract)
+  stage: PovStage;
+  health: PovHealth;
+  strategic?: boolean; // starred on the board
+  ccm?: boolean; // also a CCM target
+  customer?: string | null; // matched customers.ts name (implementation usage join)
   team?: string; // Datadog @teamDomain for trial usage, if any
   note?: string;
 }
 
-// PoV / Implementation column from the June board (active proofs-of-value).
-export const POV: PovSeed[] = [
-  { name: "Microsoft", status: "on-track", strategic: false, ccm: false, customer: null, note: "Readout July-end" },
-  { name: "Dell", status: "on-track", strategic: false, ccm: true, customer: null, note: "Readout July-end" },
-  { name: "Goldman Sachs", status: "on-track", strategic: true, ccm: true, customer: "Goldman Sachs", team: "gs-training-2026", note: "Readout Aug-end" },
-  { name: "Anglo American", status: "on-track", strategic: false, ccm: false, customer: "Anglo American PLC", team: "anglo-american" },
-  { name: "Siemens", status: "on-track", strategic: true, ccm: true, customer: "Siemens Financial Services GmbH", team: "siemens-sandbox" },
-  { name: "Allianz", status: "on-track", strategic: true, ccm: true, customer: "Allianz Technology SE", team: "allianz-global" },
-  { name: "Manulife", status: "at-risk", strategic: false, ccm: false, customer: null, team: "manulife-pov-ca-pov", note: "Ending Aug · VDI challenges" },
-  { name: "Unilever", status: "at-risk", strategic: false, ccm: false, customer: null, team: "unilever-genpact", note: "VDI – Pyze" },
-  { name: "Caceis", status: "at-risk", strategic: false, ccm: false, customer: null, team: "caceis-task-mining-pov", note: "Ending Aug · no AI addendum" },
-  { name: "Elsevier", status: "at-risk", strategic: false, ccm: false, customer: null, note: "Ending Aug · no AI addendum" },
+export const PIPELINE_STAGES: { id: PovStage; label: string }[] = [
+  { id: "Demo", label: "Demo (completed)" },
+  { id: "RFP", label: "RFP / evaluation" },
+  { id: "Discovery", label: "Discovery" },
+  { id: "Implementation", label: "PoV / implementation" },
+  { id: "Decision", label: "Decision" },
 ];
 
-// Decision column — recently won. Shown for momentum, not counted as in-progress.
-export const POV_WON: PovSeed[] = [
-  { name: "Nykredit", status: "won", strategic: false, ccm: false, note: "Scale 2,400 licenses" },
-  { name: "MAF", status: "won", strategic: false, ccm: false, note: "700 licenses" },
-  { name: "IHG", status: "won", strategic: false, ccm: false, note: "Win against Skan" },
+export const PIPELINE: PipelineSeed[] = [
+  // Demo (completed)
+  { name: "Telefonica / TEF", stage: "Demo", health: "neutral" },
+  { name: "Sulzer", stage: "Demo", health: "neutral" },
+  { name: "Voith", stage: "Demo", health: "neutral" },
+  { name: "Booking.com", stage: "Demo", health: "neutral" },
+  { name: "Nordea", stage: "Demo", health: "neutral" },
+  { name: "GSK", stage: "Demo", health: "neutral" },
+  { name: "Mars", stage: "Demo", health: "neutral", ccm: true },
+  { name: "Citco", stage: "Demo", health: "neutral" },
+  { name: "Sasol", stage: "Demo", health: "neutral" },
+  // RFP / evaluation
+  { name: "Deutsche Bank", stage: "RFP", health: "neutral", strategic: true, ccm: true },
+  { name: "Barclays", stage: "RFP", health: "neutral" },
+  { name: "AstraZeneca", stage: "RFP", health: "neutral" },
+  { name: "Autodesk", stage: "RFP", health: "neutral" },
+  { name: "Western Digital", stage: "RFP", health: "neutral" },
+  // Discovery
+  { name: "Coloplast", stage: "Discovery", health: "at-risk", note: "VDI challenges" },
+  { name: "Kerry", stage: "Discovery", health: "neutral" },
+  { name: "Novartis", stage: "Discovery", health: "neutral" },
+  // PoV / implementation
+  { name: "Caceis", stage: "Implementation", health: "at-risk", customer: null, team: "caceis-task-mining-pov", note: "Ending Aug · no AI addendum" },
+  { name: "Elsevier", stage: "Implementation", health: "at-risk", customer: null, note: "Ending Aug · no AI addendum" },
+  { name: "Manulife", stage: "Implementation", health: "at-risk", customer: null, team: "manulife-pov-ca-pov", note: "Ending Aug · VDI challenges" },
+  { name: "Microsoft", stage: "Implementation", health: "on-track", customer: null, note: "Readout July-end" },
+  { name: "Dell", stage: "Implementation", health: "on-track", ccm: true, customer: null, note: "Readout July-end" },
+  { name: "Unilever", stage: "Implementation", health: "at-risk", customer: null, team: "unilever-genpact", note: "VDI – Pyze" },
+  { name: "Goldman Sachs", stage: "Implementation", health: "on-track", strategic: true, ccm: true, customer: "Goldman Sachs", team: "gs-training-2026", note: "Readout Aug-end" },
+  { name: "Anglo American", stage: "Implementation", health: "on-track", customer: "Anglo American PLC", team: "anglo-american" },
+  { name: "Siemens", stage: "Implementation", health: "on-track", strategic: true, ccm: true, customer: "Siemens Financial Services GmbH", team: "siemens-sandbox" },
+  { name: "Allianz", stage: "Implementation", health: "on-track", strategic: true, ccm: true, customer: "Allianz Technology SE", team: "allianz-global" },
+  // Decision (won)
+  { name: "IHG", stage: "Decision", health: "won", note: "Win against Skan" },
+  { name: "MAF", stage: "Decision", health: "won", note: "700 licenses (requested)" },
+  { name: "Nykredit", stage: "Decision", health: "won", note: "Scale 2,400 licenses" },
 ];
 
 // CCM target list (screenshot). Kept verbatim for reference + future matching.
