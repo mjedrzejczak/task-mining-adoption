@@ -7,13 +7,29 @@ import {
   weeklyActiveClients,
 } from "@/data/adoption";
 import { enrich } from "@/lib/adoption";
+import { buildGrowthCustomers } from "@/lib/growth";
 import { Badge } from "@/components/ui/badge";
-import { AdoptionDashboard } from "@/components/adoption-dashboard";
-import { customers } from "@/data/customers";
+import { DashboardTabs } from "@/components/dashboard-tabs";
+import { customers as contracts } from "@/data/customers";
 
 export default function Home() {
   const enriched = enrich(teams);
   const customerCount = enriched.filter((t) => t.segment === "Customer").length;
+
+  // Contracts are static; active clients are re-derived from the latest weekly
+  // Datadog refresh by re-joining each customer's matched teams.
+  const teamClients: Record<string, number> = {};
+  for (const t of teams) teamClients[t.team] = t.clients;
+  const joined = contracts.map((c) => ({
+    ...c,
+    activeClients: c.matchedTeams.reduce(
+      (sum, team) => sum + (teamClients[team] ?? 0),
+      0,
+    ),
+  }));
+  // Enrich contracts with growth cohorts + synthetic prospect rows, so the one
+  // consolidated table covers contracts, adoption and the growth pipeline.
+  const customers = buildGrowthCustomers(joined, teamClients);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
@@ -34,7 +50,7 @@ export default function Home() {
         </p>
       </header>
 
-      <AdoptionDashboard
+      <DashboardTabs
         customers={customers}
         teams={enriched}
         weeklyActiveClients={weeklyActiveClients}

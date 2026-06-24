@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# local static preview (symlink to out/)
+/.preview/
+
 # production
 /build
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import type { CustomerRecord } from "@/data/customers";
+import type { GrowthCustomer } from "@/lib/growth";
 import type {
   CustomerFilter,
   CustomerSortKey,
@@ -9,6 +9,7 @@ import type {
 } from "@/lib/customers";
 import { CUSTOMER_FILTERS } from "@/lib/customers";
 import { Badge } from "@/components/ui/badge";
+import { CcmBadge } from "@/components/ui/ccm-badge";
 import { cn } from "@/lib/cn";
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -51,7 +52,7 @@ export function CustomerOverview({
   sortDir,
   onSort,
 }: {
-  rows: CustomerRecord[];
+  rows: GrowthCustomer[];
   totalCustomers: number;
   counts: Record<CustomerFilter, number>;
   teamClients: Record<string, number>;
@@ -71,10 +72,10 @@ export function CustomerOverview({
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
       <div className="flex flex-col gap-3 border-b border-[var(--border)] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-sm font-semibold">Customers — contracts &amp; adoption</h3>
+          <h3 className="text-sm font-semibold">Customers — contracts, adoption &amp; growth</h3>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
-            All {totalCustomers} customers · contract value joined with active Task Mining
-            clients (Datadog, May 2026) · click a row for the team breakdown
+            {totalCustomers} accounts · contracts + Datadog adoption with growth
+            cohorts (lighthouse · PoV · underutilized) · filter or click a row
           </p>
         </div>
         <input
@@ -113,6 +114,7 @@ export function CustomerOverview({
               <Th onClick={() => onSort("customer")} active={sortKey === "customer"} dir={sortDir} align="left">
                 Customer
               </Th>
+              <th className="px-4 py-2 text-left font-medium">Growth</th>
               <Th onClick={() => onSort("activeClients")} active={sortKey === "activeClients"} dir={sortDir}>
                 Active clients
               </Th>
@@ -159,11 +161,12 @@ export function CustomerOverview({
                           <span className="inline-block w-[1ch]" aria-hidden />
                         )}
                         <span className="truncate font-medium">{c.customer}</span>
-                        {!c.active ? (
-                          <Badge tone="neutral">Expired</Badge>
-                        ) : c.activeClients === 0 ? (
-                          <Badge tone="warning">No usage</Badge>
-                        ) : null}
+                        <StatusBadge c={c} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <GrowthCell c={c} />
                       </div>
                     </td>
                     <td
@@ -173,6 +176,11 @@ export function CustomerOverview({
                       )}
                     >
                       {c.activeClients > 0 ? c.activeClients.toLocaleString("en-US") : "—"}
+                      {c.prospect && c.activeClients > 0 ? (
+                        <span className="ml-1 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                          trial
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums text-[var(--muted)]">
                       {teamCount > 0 ? teamCount : "—"}
@@ -191,7 +199,7 @@ export function CustomerOverview({
                   </tr>
                   {isOpen && teamCount > 0 ? (
                     <tr className="border-b border-[var(--border)] bg-[var(--surface-2)]">
-                      <td colSpan={5} className="px-4 py-3">
+                      <td colSpan={6} className="px-4 py-3">
                         <TeamBreakdown teams={c.matchedTeams} teamClients={teamClients} />
                       </td>
                     </tr>
@@ -201,7 +209,7 @@ export function CustomerOverview({
             })}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
                   No customers match your filters.
                 </td>
               </tr>
@@ -220,6 +228,32 @@ export function CustomerOverview({
         </span>
       </div>
     </div>
+  );
+}
+
+// Contract / adoption status chip shown next to the customer name.
+function StatusBadge({ c }: { c: GrowthCustomer }) {
+  const status = c.prospect
+    ? { tone: "neutral" as const, label: "Prospect" }
+    : !c.active
+      ? { tone: "neutral" as const, label: "Expired" }
+      : c.activeClients === 0
+        ? { tone: "warning" as const, label: "No usage" }
+        : null;
+  return status ? <Badge tone={status.tone}>{status.label}</Badge> : null;
+}
+
+// Growth cohort labels, shown in the dedicated "Growth" column.
+function GrowthCell({ c }: { c: GrowthCustomer }) {
+  const none = !c.ccm && !c.lighthouse && !c.pov && !c.underutilized;
+  if (none) return <span className="text-xs text-[var(--muted)]">—</span>;
+  return (
+    <>
+      {c.ccm ? <CcmBadge /> : null}
+      {c.lighthouse ? <Badge tone="accent">Lighthouse</Badge> : null}
+      {c.pov ? <Badge tone="warning">PoV</Badge> : null}
+      {c.underutilized ? <Badge tone="warning">Underutilized</Badge> : null}
+    </>
   );
 }
 

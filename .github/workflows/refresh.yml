@@ -1,0 +1,52 @@
+name: Refresh dashboard data
+
+on:
+  # Every Monday at 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * 1"
+  # Allow manual runs (use this for the first validation run).
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pull latest numbers from Datadog
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python3 scripts/refresh_from_datadog.py
+
+      - name: Commit and trigger deploy if data changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- src/data/live.json; then
+            echo "No data changes; skipping deploy."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/live.json
+          git commit -m "chore: weekly Datadog data refresh"
+          git push
+          # GITHUB_TOKEN pushes don't auto-trigger the deploy workflow,
+          # so kick it off explicitly.
+          gh workflow run deploy.yml

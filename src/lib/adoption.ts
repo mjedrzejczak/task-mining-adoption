@@ -55,14 +55,12 @@ export function displayName(team: string): string {
 
 export interface EnrichedTeam extends TeamRecord {
   segment: Segment;
-  uploads: number;
 }
 
 export function enrich(records: TeamRecord[]): EnrichedTeam[] {
   return records.map((r) => ({
     ...r,
     segment: segmentOf(r.team),
-    uploads: r.parquet + r.image,
   }));
 }
 

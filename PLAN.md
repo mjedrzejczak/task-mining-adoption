@@ -37,6 +37,37 @@ complete customer (team) list.
 7. [ ] Compose dashboard page + theme.
 8. [ ] Build/lint check.
 
+## Growth & Engagement dimension (added Jun 2026)
+A focused, scannable view layered on top of the contract book to track the three
+cohorts the team is actively working to grow. Rendered as a dedicated section
+above the full contracts table.
+
+- **Inputs** (curated, `src/data/growth.ts`): lighthouse account list, the CCM
+  target list (screenshot), and the June PoV board (screenshot). Each entry maps
+  to a `src/data/customers.ts` name when a contract exists; otherwise it is a
+  prospect/PoV with no contract record.
+- **Derivation** (`src/lib/growth.ts`, pure): joins curated seeds with the live
+  contract+adoption snapshot to produce three groups plus a warnings list.
+- **Three cohorts**:
+  1. **Underutilized** — active *paying* contracts (ACV > 0) under-adopting
+     (`activeClients < UNDERUTILIZED_MAX_CLIENTS = 25`), sorted by ACV. Surfaces
+     the largest "paying but not deployed" gaps.
+  2. **Lighthouse** — curated reference accounts. Each shows a prominent **CCM
+     target** badge when it also appears on the CCM list (matched to TM), plus a
+     usage status (Scaling / Low / No usage / Expired / Prospect).
+  3. **PoV** — the active PoV/Implementation pipeline (on-track / at-risk),
+     enriched with Datadog trial-client counts where a `@teamDomain` exists.
+     Recent wins (Nykredit, MAF, IHG) shown for momentum, not counted.
+- **KPIs (top)**: # PoVs in progress · # lighthouse accounts · # warning
+  customers to review.
+- **Warnings (bottom)** — accounts the account team should review:
+  using TM but contract expired; paying contract with no usage; lighthouse
+  without utilisation; renewal due ≤ 90 days.
+- **Assumptions**: "underutilized" uses a fixed 25-client threshold (no licensed
+  seat counts available); Siemens lighthouse maps to *Siemens Financial Services*
+  while CCM lists *Siemens Energy* (same group, flagged in a note); CCM/PoV names
+  matched to the contract book only where unambiguous.
+
 ## Notes / caveats
 - Weekly active-client breakdown is partial (log retention ~30d), only late-May weeks present.
 - Some `@teamDomain` values are environment/internal labels (`prod`, `production`,

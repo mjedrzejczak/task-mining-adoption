@@ -8,8 +8,7 @@ const currency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 1,
 });
 
-// Top KPI strip. The first three cards double as table filter toggles; the
-// rest are read-only roll-ups. All values reflect the customers in view.
+// Contract roll-ups for the adoption view. Toggle cards drive the table filter.
 export function CustomerKpis({
   kpis,
   filter,
@@ -24,8 +23,6 @@ export function CustomerKpis({
       <Stat
         label="Active contracts"
         value={kpis.activeContracts.toLocaleString("en-US")}
-        onClick={() => onToggle("Active")}
-        active={filter === "Active"}
         hint="customers with a live Task Mining contract"
       />
       <Stat

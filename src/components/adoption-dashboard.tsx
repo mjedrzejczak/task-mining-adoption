@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { WeekPoint } from "@/data/adoption";
-import type { CustomerRecord } from "@/data/customers";
 import type { EnrichedTeam } from "@/lib/adoption";
+import type { GrowthCustomer } from "@/lib/growth";
 import type { CustomerFilter, CustomerSortKey, SortDir } from "@/lib/customers";
 import { customerKpis, filterCounts, filterSortCustomers } from "@/lib/customers";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -17,7 +17,7 @@ export function AdoptionDashboard({
   teams,
   weeklyActiveClients,
 }: {
-  customers: CustomerRecord[];
+  customers: GrowthCustomer[];
   teams: EnrichedTeam[];
   weeklyActiveClients: WeekPoint[];
 }) {
@@ -78,7 +78,7 @@ export function AdoptionDashboard({
             subtitle="active Task Mining clients · current view"
           />
           <CardContent>
-            <TopCustomersChart customers={rows} />
+            <TopCustomersChart customers={rows.filter((r) => !r.prospect)} />
           </CardContent>
         </Card>
         <Card>
