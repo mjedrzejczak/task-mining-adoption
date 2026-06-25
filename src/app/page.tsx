@@ -10,6 +10,7 @@ import { enrich } from "@/lib/adoption";
 import { buildGrowthCustomers } from "@/lib/growth";
 import { Badge } from "@/components/ui/badge";
 import { DashboardTabs } from "@/components/dashboard-tabs";
+import { PasswordGate } from "@/components/password-gate";
 import { customers as contracts } from "@/data/customers";
 
 export default function Home() {
@@ -32,6 +33,7 @@ export default function Home() {
   const customers = buildGrowthCustomers(joined, teamClients);
 
   return (
+    <PasswordGate>
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
       <header className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -65,5 +67,6 @@ export default function Home() {
         clients series is platform-wide and partial due to ~30-day log retention.
       </footer>
     </main>
+    </PasswordGate>
   );
 }
