@@ -11,6 +11,8 @@ import { CustomerKpis } from "@/components/customer-kpis";
 import { CustomerOverview } from "@/components/customer-overview";
 import { TopCustomersChart } from "@/components/top-customers-chart";
 import { WeeklyClientsChart } from "@/components/weekly-clients-chart";
+import { VersionByCustomer } from "@/components/version-by-customer";
+import { VERSION_PERIOD, versionTotals, versionsByTeam } from "@/data/versions";
 
 export function AdoptionDashboard({
   customers,
@@ -25,6 +27,7 @@ export function AdoptionDashboard({
   const [filter, setFilter] = useState<CustomerFilter>("All");
   const [sortKey, setSortKey] = useState<CustomerSortKey>("activeClients");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [versionFilter, setVersionFilter] = useState<string | null>(null);
 
   const teamClients = useMemo(() => {
     const map: Record<string, number> = {};
@@ -32,10 +35,24 @@ export function AdoptionDashboard({
     return map;
   }, [teams]);
 
-  const rows = useMemo(
-    () => filterSortCustomers(customers, { query, filter, sortKey, sortDir }),
-    [customers, query, filter, sortKey, sortDir],
-  );
+  // Map every recorder version to the set of team domains running it, so a
+  // version click can filter the customer table by matched team.
+  const versionTeams = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    for (const t of versionsByTeam) {
+      for (const v of t.versions) {
+        (map[v.version] ??= new Set()).add(t.team);
+      }
+    }
+    return map;
+  }, []);
+
+  const rows = useMemo(() => {
+    const base = filterSortCustomers(customers, { query, filter, sortKey, sortDir });
+    if (!versionFilter) return base;
+    const vt = versionTeams[versionFilter] ?? new Set<string>();
+    return base.filter((c) => c.matchedTeams.some((t) => vt.has(t)));
+  }, [customers, query, filter, sortKey, sortDir, versionFilter, versionTeams]);
   const kpis = useMemo(() => customerKpis(rows), [rows]);
   const counts = useMemo(() => filterCounts(customers), [customers]);
 
@@ -54,6 +71,26 @@ export function AdoptionDashboard({
   return (
     <>
       <CustomerKpis kpis={kpis} filter={filter} onToggle={toggle} />
+
+      {versionFilter ? (
+        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-sm">
+          <span className="text-[var(--foreground)]">
+            Showing customers running recorder{" "}
+            <span className="font-mono font-semibold text-[var(--accent)]">
+              {versionFilter}
+            </span>{" "}
+            · <span className="font-semibold tabular-nums">{rows.length}</span>{" "}
+            {rows.length === 1 ? "customer" : "customers"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setVersionFilter(null)}
+            className="ml-auto rounded-md px-2 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--surface)]"
+          >
+            Clear version filter ✕
+          </button>
+        </div>
+      ) : null}
 
       <section className="mt-6">
         <CustomerOverview
@@ -90,6 +127,16 @@ export function AdoptionDashboard({
             <WeeklyClientsChart data={weeklyActiveClients} />
           </CardContent>
         </Card>
+      </section>
+
+      <section className="mt-3">
+        <VersionByCustomer
+          totals={versionTotals}
+          byTeam={versionsByTeam}
+          period={VERSION_PERIOD}
+          selectedVersion={versionFilter}
+          onSelectVersion={setVersionFilter}
+        />
       </section>
     </>
   );
