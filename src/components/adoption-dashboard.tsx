@@ -4,8 +4,14 @@ import { useMemo, useState } from "react";
 import type { WeekPoint } from "@/data/adoption";
 import type { EnrichedTeam } from "@/lib/adoption";
 import type { GrowthCustomer } from "@/lib/growth";
-import type { CustomerFilter, CustomerSortKey, SortDir } from "@/lib/customers";
+import type {
+  CustomerFilter,
+  CustomerKpis as Kpis,
+  CustomerSortKey,
+  SortDir,
+} from "@/lib/customers";
 import { customerKpis, filterCounts, filterSortCustomers } from "@/lib/customers";
+import { PREV_PERIOD, prevActiveClients } from "@/data/previous";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CustomerKpis } from "@/components/customer-kpis";
 import { CustomerOverview } from "@/components/customer-overview";
@@ -54,6 +60,35 @@ export function AdoptionDashboard({
     return base.filter((c) => c.matchedTeams.some((t) => vt.has(t)));
   }, [customers, query, filter, sortKey, sortDir, versionFilter, versionTeams]);
   const kpis = useMemo(() => customerKpis(rows), [rows]);
+
+  // Previous-month KPIs over the same in-view customers: drop logos that are new
+  // this period (they didn't exist last month) and re-value each remaining
+  // customer's active clients from the Jun 2026 Datadog snapshot.
+  const deltas = useMemo<Kpis>(() => {
+    const prevRows = rows
+      .filter((c) => !c.newThisPeriod)
+      .map((c) => ({ ...c, activeClients: prevActiveClients(c.matchedTeams) }));
+    const prev = customerKpis(prevRows);
+    return {
+      customersInView: kpis.customersInView - prev.customersInView,
+      activeContracts: kpis.activeContracts - prev.activeContracts,
+      adopting: kpis.adopting - prev.adopting,
+      noUsage: kpis.noUsage - prev.noUsage,
+      expired: kpis.expired - prev.expired,
+      totalAcv: kpis.totalAcv - prev.totalAcv,
+      noUsageAcv: kpis.noUsageAcv - prev.noUsageAcv,
+      totalActiveClients: kpis.totalActiveClients - prev.totalActiveClients,
+      activeTeams: kpis.activeTeams - prev.activeTeams,
+    };
+  }, [rows, kpis]);
+
+  // Prior-month active clients per customer, for the table row deltas.
+  const prevActiveByCustomer = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const c of customers) m[c.customer] = prevActiveClients(c.matchedTeams);
+    return m;
+  }, [customers]);
+
   const counts = useMemo(() => filterCounts(customers), [customers]);
 
   // KPI cards double as filter toggles; clicking the active one clears it.
@@ -70,7 +105,10 @@ export function AdoptionDashboard({
 
   return (
     <>
-      <CustomerKpis kpis={kpis} filter={filter} onToggle={toggle} />
+      <CustomerKpis kpis={kpis} deltas={deltas} filter={filter} onToggle={toggle} />
+      <p className="mt-2 text-xs text-[var(--muted)]">
+        ▲/▼ deltas compare with {PREV_PERIOD} (last month).
+      </p>
 
       {versionFilter ? (
         <div className="mt-6 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-sm">
@@ -98,6 +136,7 @@ export function AdoptionDashboard({
           totalCustomers={customers.length}
           counts={counts}
           teamClients={teamClients}
+          prevActiveByCustomer={prevActiveByCustomer}
           query={query}
           onQuery={setQuery}
           filter={filter}

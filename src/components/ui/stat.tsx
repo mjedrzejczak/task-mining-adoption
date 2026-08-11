@@ -14,6 +14,8 @@ interface StatProps {
   value: string;
   hint?: string;
   tone?: Tone;
+  // Optional month-over-month indicator rendered under the value.
+  delta?: React.ReactNode;
   // When provided, the card becomes a toggle button that drives the table
   // filter. `active` reflects the pressed state for styling + a11y.
   onClick?: () => void;
@@ -25,6 +27,7 @@ export function Stat({
   value,
   hint,
   tone = "default",
+  delta,
   onClick,
   active = false,
 }: StatProps) {
@@ -56,6 +59,7 @@ export function Stat({
       <p className={cn("mt-2 text-2xl font-semibold tabular-nums", valueTone[tone])}>
         {value}
       </p>
+      {delta ? <div className="mt-1">{delta}</div> : null}
       {hint ? <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p> : null}
     </>
   );

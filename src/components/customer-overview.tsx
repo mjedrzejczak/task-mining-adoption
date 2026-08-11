@@ -10,6 +10,7 @@ import type {
 import { CUSTOMER_FILTERS } from "@/lib/customers";
 import { Badge } from "@/components/ui/badge";
 import { CcmBadge } from "@/components/ui/ccm-badge";
+import { Delta } from "@/components/ui/delta";
 import { cn } from "@/lib/cn";
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -44,6 +45,7 @@ export function CustomerOverview({
   totalCustomers,
   counts,
   teamClients,
+  prevActiveByCustomer,
   query,
   onQuery,
   filter,
@@ -56,6 +58,7 @@ export function CustomerOverview({
   totalCustomers: number;
   counts: Record<CustomerFilter, number>;
   teamClients: Record<string, number>;
+  prevActiveByCustomer: Record<string, number>;
   query: string;
   onQuery: (s: string) => void;
   filter: CustomerFilter;
@@ -175,12 +178,17 @@ export function CustomerOverview({
                         c.activeClients > 0 ? "font-medium" : "text-[var(--muted)]",
                       )}
                     >
-                      {c.activeClients > 0 ? c.activeClients.toLocaleString("en-US") : "—"}
-                      {c.prospect && c.activeClients > 0 ? (
-                        <span className="ml-1 text-[10px] uppercase tracking-wide text-[var(--muted)]">
-                          trial
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span>
+                          {c.activeClients > 0 ? c.activeClients.toLocaleString("en-US") : "—"}
+                          {c.prospect && c.activeClients > 0 ? (
+                            <span className="ml-1 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                              trial
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
+                        <ClientDelta c={c} prev={prevActiveByCustomer[c.customer] ?? 0} />
+                      </div>
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums text-[var(--muted)]">
                       {teamCount > 0 ? teamCount : "—"}
@@ -241,6 +249,23 @@ function StatusBadge({ c }: { c: GrowthCustomer }) {
         ? { tone: "warning" as const, label: "No usage" }
         : null;
   return status ? <Badge tone={status.tone}>{status.label}</Badge> : null;
+}
+
+// Month-over-month change in active clients, shown under the count. New logos
+// (added this period) get a "New" tag instead of a delta.
+function ClientDelta({ c, prev }: { c: GrowthCustomer; prev: number }) {
+  if (c.prospect) return null;
+  if (c.newThisPeriod) return <Badge tone="accent">New</Badge>;
+  const delta = c.activeClients - prev;
+  if (delta === 0) return null;
+  return (
+    <Delta
+      value={delta}
+      format={(n) => n.toLocaleString("en-US")}
+      suffix=""
+      size="sm"
+    />
+  );
 }
 
 // Growth cohort labels, shown in the dedicated "Growth" column.

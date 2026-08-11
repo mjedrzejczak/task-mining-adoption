@@ -9,6 +9,7 @@ export interface CustomerRecord {
   endDate: string | null; // contract end (latest active subscription)
   active: boolean; // has >=1 active subscription
   matchedTeams: string[]; // Datadog @teamDomain(s) joined for adoption
+  newThisPeriod?: boolean; // net-new logo added this period (Q2 2026)
 }
 
 export const customers: CustomerRecord[] = [
@@ -671,7 +672,8 @@ export const customers: CustomerRecord[] = [
     "active": true,
     "matchedTeams": [
       "elsevier"
-    ]
+    ],
+    "newThisPeriod": true
   },
   {
     "customer": "E.ON",
@@ -681,7 +683,8 @@ export const customers: CustomerRecord[] = [
     "active": true,
     "matchedTeams": [
       "eon"
-    ]
+    ],
+    "newThisPeriod": true
   },
   {
     "customer": "Alstom",
@@ -691,7 +694,8 @@ export const customers: CustomerRecord[] = [
     "active": true,
     "matchedTeams": [
       "alstom"
-    ]
+    ],
+    "newThisPeriod": true
   },
   // From CRM screen. Contract value unknown (not recorded); end dates as shown.
   {
@@ -700,7 +704,8 @@ export const customers: CustomerRecord[] = [
     "activeClients": 0,
     "endDate": "2029-09-01",
     "active": true,
-    "matchedTeams": []
+    "matchedTeams": [],
+    "newThisPeriod": true
   },
   {
     "customer": "El Corte Ingles Sa",
@@ -708,7 +713,8 @@ export const customers: CustomerRecord[] = [
     "activeClients": 0,
     "endDate": "2029-07-31",
     "active": true,
-    "matchedTeams": []
+    "matchedTeams": [],
+    "newThisPeriod": true
   },
   {
     "customer": "Nintex Global Ltd",
@@ -716,6 +722,7 @@ export const customers: CustomerRecord[] = [
     "activeClients": 0,
     "endDate": "2027-08-01",
     "active": true,
-    "matchedTeams": []
+    "matchedTeams": [],
+    "newThisPeriod": true
   }
 ];
