@@ -660,5 +660,62 @@ export const customers: CustomerRecord[] = [
     "endDate": "2026-12-01",
     "active": true,
     "matchedTeams": []
+  },
+  // Q2 2026 net-new logos (added manually on top of the uploaded sheet).
+  // Elsevier / E.ON / Alstom are net-new in Datadog; contract terms TBD.
+  {
+    "customer": "Elsevier",
+    "contractValue": 0,
+    "activeClients": 20,
+    "endDate": null,
+    "active": true,
+    "matchedTeams": [
+      "elsevier"
+    ]
+  },
+  {
+    "customer": "E.ON",
+    "contractValue": 0,
+    "activeClients": 6,
+    "endDate": null,
+    "active": true,
+    "matchedTeams": [
+      "eon"
+    ]
+  },
+  {
+    "customer": "Alstom",
+    "contractValue": 0,
+    "activeClients": 3,
+    "endDate": null,
+    "active": true,
+    "matchedTeams": [
+      "alstom"
+    ]
+  },
+  // From CRM screen. Contract value unknown (not recorded); end dates as shown.
+  {
+    "customer": "IBM MEA",
+    "contractValue": 0,
+    "activeClients": 0,
+    "endDate": "2029-09-01",
+    "active": true,
+    "matchedTeams": []
+  },
+  {
+    "customer": "El Corte Ingles Sa",
+    "contractValue": 0,
+    "activeClients": 0,
+    "endDate": "2029-07-31",
+    "active": true,
+    "matchedTeams": []
+  },
+  {
+    "customer": "Nintex Global Ltd",
+    "contractValue": 0,
+    "activeClients": 0,
+    "endDate": "2027-08-01",
+    "active": true,
+    "matchedTeams": []
   }
 ];
